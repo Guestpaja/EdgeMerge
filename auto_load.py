@@ -1,6 +1,6 @@
 import os
-import bpy
 import sys
+import bpy
 import typing
 import inspect
 import pkgutil
