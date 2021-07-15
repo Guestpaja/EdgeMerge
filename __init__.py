@@ -27,30 +27,36 @@ import bmesh
 import numpy as np
 
 def CleanUp():
-    
-    def correct_indices(start_bmvert, corrected_indices, bmverts):
+
+    def get_correct_indices(start_bmvert, corrected_indices, bmverts):
         
         #Correct the indices such that the vert_ids correspond to how the verts are arranged on the model
         adjacent_verts = [edge.other_vert(start_bmvert) for edge in start_bmvert.link_edges]
         counter = 0
-        
+
         #Check for potential loose ends
         for adjacent_vert in adjacent_verts:
             if adjacent_vert in bmverts:
                     counter += 1
             else:
                 pass
-        
+
         if counter <= 2:
             pass
         else:
             raise Exception("Operation failed, please check for any loose vertices")
-            
+
         #Check if/which vert of the adjacent ones was also selected and get its index
         for adjacent_vert in adjacent_verts:
-            if adjacent_vert in bmverts and adjacent_vert not in corrected_indices:
-                corrected_indices.append(bmverts.index(adjacent_vert))
-                correct_indices(adjacent_vert, corrected_indices, bmverts)
+            
+            if adjacent_vert in bmverts:
+                
+                if bmverts.index(adjacent_vert) not in corrected_indices:
+                    corrected_indices.append(bmverts.index(adjacent_vert))
+                    get_correct_indices(adjacent_vert, corrected_indices, bmverts)
+                else:
+                    pass
+                
             else:
                 pass
     
@@ -58,25 +64,28 @@ def CleanUp():
     verts = {}
     i = 0
     obj = bpy.context.object
-    
+
     #Check for edit mode, if the mode isn't edit mode pass
     if obj.mode == 'EDIT':
         
         #Get selected verts and asign them into a dictionary such that - vert_id (int) : [bmesh vert data (BMVert), xyz coords (np array of single floats)]
         bm = bmesh.from_edit_mesh(obj.data)
-        
+
         for vert in bm.verts:
             if vert.select:
                 verts[i] = [vert, np.array([vert.co.x, vert.co.y, vert.co.z], dtype = np.single)]
                 i += 1
             else:
                 pass
-        
+
         bmverts = [verts[x][0] for x in verts]
         corrected_indices = [0]
+
+        get_correct_indices(bmverts[0], corrected_indices, bmverts)
         
-        correct_indices(bmverts[0], corrected_indices, bmverts)
         print(corrected_indices)
+        print("-"*20)
+        print(verts)
         
     else:
         print("Object is not in edit mode.")
