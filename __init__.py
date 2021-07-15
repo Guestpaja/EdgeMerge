@@ -28,7 +28,7 @@ import numpy as np
 
 def CleanUp():
 
-    def get_correct_indices(start_bmvert, corrected_indices, bmverts):
+    def correct_verts(start_bmvert, corrected_verts, bmverts, to_skip):
         
         #Correct the indices such that the vert_ids correspond to how the verts are arranged on the model
         adjacent_verts = [edge.other_vert(start_bmvert) for edge in start_bmvert.link_edges]
@@ -41,7 +41,9 @@ def CleanUp():
             else:
                 pass
 
-        if counter <= 2:
+        if counter == 2:
+            pass
+        elif counter == 1:
             pass
         else:
             print("Operation failed, please check for any loose vertices")
@@ -52,9 +54,10 @@ def CleanUp():
             
             if adjacent_vert in bmverts:
                 
-                if bmverts.index(adjacent_vert) not in corrected_indices:
-                    corrected_indices.append(bmverts.index(adjacent_vert))
-                    get_correct_indices(adjacent_vert, corrected_indices, bmverts)
+                if bmverts.index(adjacent_vert) not in to_skip:
+                    to_skip.append(bmverts.index(adjacent_vert))
+                    corrected_verts[len(corrected_verts)] = [adjacent_vert, np.array([adjacent_vert.co.x, adjacent_vert.co.y, adjacent_vert.co.z], dtype = np.single)]
+                    correct_verts(adjacent_vert, corrected_verts, bmverts, to_skip)
                 else:
                     pass
                 
@@ -74,19 +77,17 @@ def CleanUp():
 
         for vert in bm.verts:
             if vert.select:
-                verts[i] = [vert, np.array([vert.co.x, vert.co.y, vert.co.z], dtype = np.single)]
+                verts[i] = vert
                 i += 1
             else:
                 pass
         
         #Set up vars
-        bmverts = [verts[x][0] for x in verts]
-        corrected_indices = [0]
+        bmverts = [verts[x] for x in verts]
+        corrected_verts = {0:[bmverts[0], np.array([bmverts[0].co.x, bmverts[0].co.y, bmverts[0].co.z], dtype = np.single)]}
+        to_skip = [0]
 
-        get_correct_indices(bmverts[0], corrected_indices, bmverts)
-        
-        #Reassign corrected indices to verts in a dictionary
-        corrected_verts = {corrected_indices.index(i):verts[i] for i in corrected_indices}
+        correct_verts(bmverts[0], corrected_verts, bmverts, to_skip)
         
         print(corrected_verts)
         
