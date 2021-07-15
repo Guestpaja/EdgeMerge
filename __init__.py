@@ -44,7 +44,8 @@ def CleanUp():
         if counter <= 2:
             pass
         else:
-            raise Exception("Operation failed, please check for any loose vertices")
+            print("Operation failed, please check for any loose vertices")
+            raise Exception
 
         #Check if/which vert of the adjacent ones was also selected and get its index
         for adjacent_vert in adjacent_verts:
@@ -59,7 +60,7 @@ def CleanUp():
                 
             else:
                 pass
-    
+
     #Set up vars
     verts = {}
     i = 0
@@ -77,15 +78,17 @@ def CleanUp():
                 i += 1
             else:
                 pass
-
+        
+        #Set up vars
         bmverts = [verts[x][0] for x in verts]
         corrected_indices = [0]
 
         get_correct_indices(bmverts[0], corrected_indices, bmverts)
         
-        print(corrected_indices)
-        print("-"*20)
-        print(verts)
+        #Reassign corrected indices to verts in a dictionary
+        corrected_verts = {corrected_indices.index(i):verts[i] for i in corrected_indices}
+        
+        print(corrected_verts)
         
     else:
         print("Object is not in edit mode.")
