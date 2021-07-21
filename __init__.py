@@ -22,21 +22,25 @@ bl_info = {
     "category" : "Generic"
 }
 
+from os import close
 import bpy
 import bmesh
+from bpy.types import GPENCIL_MT_move_to_layer
 import numpy as np
 
 def CleanUp():
 
-    def correct_verts(start_bmvert, corrected_verts, bmverts, to_skip):
+    def correct_verts(start_vert, verts, corrected_verts):
+        
+        nonlocal closed_loop
         
         #Correct the indices such that the vert_ids correspond to how the verts are arranged on the model
-        adjacent_verts = [edge.other_vert(start_bmvert) for edge in start_bmvert.link_edges]
+        adjacent_verts = [edge.other_vert(start_vert) for edge in start_vert.link_edges]
         counter = 0
 
         #Check for potential loose ends
         for adjacent_vert in adjacent_verts:
-            if adjacent_vert in bmverts:
+            if adjacent_vert in verts:
                     counter += 1
             else:
                 pass
@@ -44,52 +48,48 @@ def CleanUp():
         if counter == 2:
             pass
         elif counter == 1:
-            pass
+            closed_loop = False
         else:
             print("Operation failed, please check for any loose vertices")
             raise Exception
-
-        #Check if/which vert of the adjacent ones was also selected and get its index
+        
+        #Check if/which vert of the adjacent ones was also selected and if it hasn't been corrected, correct it
         for adjacent_vert in adjacent_verts:
             
-            if adjacent_vert in bmverts:
-                
-                if bmverts.index(adjacent_vert) not in to_skip:
-                    to_skip.append(bmverts.index(adjacent_vert))
-                    corrected_verts[len(corrected_verts)] = [adjacent_vert, np.array([adjacent_vert.co.x, adjacent_vert.co.y, adjacent_vert.co.z], dtype = np.single)]
-                    correct_verts(adjacent_vert, corrected_verts, bmverts, to_skip)
-                else:
-                    pass
+            if adjacent_vert in verts and adjacent_vert not in corrected_verts:
+                    
+                    if closed_loop:
+                        corrected_verts.append(adjacent_vert)
+                        correct_verts(adjacent_vert, verts, corrected_verts)
+                    else:
+                        corrected_verts.insert(0, adjacent_vert)
+                        correct_verts(adjacent_vert, verts, corrected_verts)
                 
             else:
                 pass
-
+        
     #Set up vars
-    verts = {}
-    i = 0
+    verts = []
     obj = bpy.context.object
 
     #Check for edit mode, if the mode isn't edit mode pass
     if obj.mode == 'EDIT':
         
-        #Get selected verts and asign them into a dictionary such that - vert_id (int) : [bmesh vert data (BMVert), xyz coords (np array of single floats)]
+        #Get selected verts
         bm = bmesh.from_edit_mesh(obj.data)
 
         for vert in bm.verts:
             if vert.select:
-                verts[i] = vert
-                i += 1
+                verts.append(vert)
             else:
                 pass
         
         #Set up vars
-        bmverts = [verts[x] for x in verts]
-        corrected_verts = {0:[bmverts[0], np.array([bmverts[0].co.x, bmverts[0].co.y, bmverts[0].co.z], dtype = np.single)]}
-        to_skip = [0]
+        corrected_verts = [verts[0]]
+        closed_loop = True
 
-        correct_verts(bmverts[0], corrected_verts, bmverts, to_skip)
+        correct_verts(verts[0], verts, corrected_verts)
         
-        print(corrected_verts)
         
     else:
         print("Object is not in edit mode.")
