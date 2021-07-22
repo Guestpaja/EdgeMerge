@@ -22,83 +22,93 @@ bl_info = {
     "category" : "Generic"
 }
 
-from os import close
 import bpy
 import bmesh
-from bpy.types import GPENCIL_MT_move_to_layer
-import numpy as np
 
-def CleanUp():
+###############
+# MINOR FUNCS #
+###############
 
-    def correct_verts(start_vert, verts, corrected_verts):
-        
-        nonlocal closed_loop
-        
-        #Correct the indices such that the vert_ids correspond to how the verts are arranged on the model
-        adjacent_verts = [edge.other_vert(start_vert) for edge in start_vert.link_edges]
-        counter = 0
 
-        #Check for potential loose ends
-        for adjacent_vert in adjacent_verts:
-            if adjacent_vert in verts:
-                    counter += 1
-            else:
-                pass
+def correct_order(current_vert, selected_verts, corrected_order, closed_loop = True):
 
-        if counter == 2:
-            pass
-        elif counter == 1:
-            closed_loop = False
+    adj_vert_counter = 0
+    adj_verts = [edge.other_vert(current_vert) for edge in current_vert.link_edges]
+
+    #Check if the selection is a valid loop and if its open/closed
+    for adj_vert in adj_verts:
+        if adj_vert in selected_verts:
+                adj_vert_counter += 1
         else:
-            print("Operation failed, please check for any loose vertices")
-            raise Exception
-        
-        #Check if/which vert of the adjacent ones was also selected and if it hasn't been corrected, correct it
-        for adjacent_vert in adjacent_verts:
-            
-            if adjacent_vert in verts and adjacent_vert not in corrected_verts:
-                    
-                    if closed_loop:
-                        corrected_verts.append(adjacent_vert)
-                        correct_verts(adjacent_vert, verts, corrected_verts)
-                    else:
-                        corrected_verts.insert(0, adjacent_vert)
-                        correct_verts(adjacent_vert, verts, corrected_verts)
-                
-            else:
-                pass
-        
-    #Set up vars
-    verts = []
-    obj = bpy.context.object
+            pass
 
-    #Check for edit mode, if the mode isn't edit mode pass
-    if obj.mode == 'EDIT':
-        
-        #Get selected verts
-        bm = bmesh.from_edit_mesh(obj.data)
+    if adj_vert_counter == 2:
+        pass
+    elif adj_vert_counter == 1:
+        pass
+    else:
+        print("Operation failed, please check for any loose vertices")
+        raise Exception
 
+    #Check if/which vert of the adjacent ones was also selected and if its position hasn't been corrected, correct it
+    for adj_vert in adj_verts:
+
+        if adj_vert in selected_verts and adj_vert not in corrected_order:
+
+                if closed_loop:
+                    corrected_order.append(adj_vert)
+                    closed_loop = correct_order(adj_vert, selected_verts, corrected_order, closed_loop)
+                else:
+                    corrected_order.insert(0, adj_vert)
+                    correct_order(adj_vert, selected_verts, corrected_order, closed_loop)
+        else:
+            pass
+    
+    closed_loop = False
+    return closed_loop
+
+# def correct_coords(current_vert, last_vert, unnecessary_verts, adj_vert_counter, selected_verts):
+#     pass
+
+
+#############
+# MAIN FUNC #
+#############
+
+def clean_up():
+
+    current_obj = bpy.context.object
+
+    if current_obj.mode == 'EDIT':
+        
+        selected_verts = []
+        bm = bmesh.from_edit_mesh(current_obj.data)
+
+        #Iterate through all selected_verts and list selected ones
         for vert in bm.verts:
             if vert.select:
-                verts.append(vert)
+                selected_verts.append(vert)
             else:
                 pass
-        
-        #Set up vars
-        corrected_verts = [verts[0]]
-        closed_loop = True
 
-        correct_verts(verts[0], verts, corrected_verts)
+        corrected_order = [selected_verts[0]]
+
+        correct_order(selected_verts[0], selected_verts, corrected_order)
+        
+        print(corrected_order)
         
         
     else:
         print("Object is not in edit mode.")
     
-    #Change modes to "apply" changes
     bpy.ops.object.mode_set(mode = 'OBJECT')
     bpy.ops.object.mode_set(mode = 'EDIT')
 
-#Create operator
+
+#######################
+# ADD-ON INSTALLATION #
+#######################
+
 class CleanUpOperator(bpy.types.Operator):
     
     bl_idname = "edgemerge.edge_clean_up"
@@ -106,14 +116,13 @@ class CleanUpOperator(bpy.types.Operator):
     
     def execute(self, context):
         try:
-            CleanUp()
+            clean_up()
             return {'FINISHED'}
         
         except:
             print("Well shit")
             return {'CANCELLED'}
 
-#UI and register handling
 def draw_menu(self, context):
     layout = self.layout
     layout.separator()
