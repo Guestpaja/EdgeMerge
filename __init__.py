@@ -24,6 +24,7 @@ bl_info = {
 
 import bpy
 import bmesh
+from bpy.types import RENDER_PT_color_management
 
 ###############
 # MINOR FUNCS #
@@ -64,11 +65,56 @@ def correct_order(current_vert, selected_verts, corrected_order, closed_loop = T
         else:
             pass
     
-    closed_loop = False
-    return closed_loop
+    return False
 
-# def correct_coords(current_vert, last_vert, unnecessary_verts, adj_vert_counter, selected_verts):
-#     pass
+
+def get_ratios(vert1, vert2):
+    
+    lenghts = [abs(vert1.co[i] - vert2.co[i]) for i in range(3)]
+    ratios = []
+    
+    for i in range(-1, 2):
+        try:
+            ratios.append(lenghts[i] / lenghts[i + 1])
+        except ZeroDivisionError:
+            ratios.append(0)
+    
+    return ratios
+
+
+def correct_coords(last_vert, unnecessary_verts, verts, last_ratios, vert_counter = 0):
+    
+    try:
+        current_vert = verts[verts.index(last_vert) + 1]
+        current_ratios = get_ratios(last_vert, current_vert)
+        
+        print(last_ratios, "last")
+        print(current_ratios, "current")
+        
+        for i in range(3):
+            if abs(last_ratios[i] - current_ratios[i]) <= 0.0001:
+                ratios_equal = True
+            else:
+                ratios_equal = False
+                break
+        
+        if ratios_equal:
+            
+            vert_counter += 1
+            
+            if vert_counter >= 2:
+                unnecessary_verts.append(last_vert)
+                correct_coords(current_vert, unnecessary_verts, verts, current_ratios, vert_counter)
+            
+            else:
+                correct_coords(current_vert, unnecessary_verts, verts, current_ratios, vert_counter)
+            
+        else:
+            vert_counter = 1
+            correct_coords(current_vert, unnecessary_verts, verts, current_ratios, vert_counter)
+                    
+    except Exception as ex:
+        print(ex)
 
 
 #############
@@ -95,7 +141,11 @@ def clean_up():
 
         correct_order(selected_verts[0], selected_verts, corrected_order)
         
-        print(corrected_order)
+        unnecessary_verts = []
+        
+        correct_coords(corrected_order[0], unnecessary_verts, corrected_order, get_ratios(corrected_order[0], corrected_order[1]))
+        
+        print(unnecessary_verts)
         
         
     else:
@@ -119,8 +169,9 @@ class CleanUpOperator(bpy.types.Operator):
             clean_up()
             return {'FINISHED'}
         
-        except:
+        except Exception as ex:
             print("Well shit")
+            print(ex)
             return {'CANCELLED'}
 
 def draw_menu(self, context):
