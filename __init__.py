@@ -79,17 +79,16 @@ def get_ratios(vert1, vert2):
         except ZeroDivisionError:
             ratios.append(0)
     
-    return ratios
+    ratio_types = [type(i) for i in ratios]
+
+    return ratios, ratio_types
 
 
-def correct_coords(last_vert, unnecessary_verts, verts, last_ratios, vert_counter = 0):
+def correct_coords(last_vert, unnecessary_verts, verts, last_ratios, last_r_types, vert_counter = 0):
     
     try:
         current_vert = verts[verts.index(last_vert) + 1]
-        current_ratios = get_ratios(last_vert, current_vert)
-        
-        print(last_ratios, "last")
-        print(current_ratios, "current")
+        current_ratios, current_r_types = get_ratios(last_vert, current_vert)
         
         for i in range(3):
             if abs(last_ratios[i] - current_ratios[i]) <= 0.0001:
@@ -98,20 +97,20 @@ def correct_coords(last_vert, unnecessary_verts, verts, last_ratios, vert_counte
                 ratios_equal = False
                 break
         
-        if ratios_equal:
+        if ratios_equal and current_r_types == last_r_types:
             
             vert_counter += 1
             
             if vert_counter >= 2:
                 unnecessary_verts.append(last_vert)
-                correct_coords(current_vert, unnecessary_verts, verts, current_ratios, vert_counter)
+                correct_coords(current_vert, unnecessary_verts, verts, current_ratios, current_r_types, vert_counter)
             
             else:
-                correct_coords(current_vert, unnecessary_verts, verts, current_ratios, vert_counter)
+                correct_coords(current_vert, unnecessary_verts, verts, current_ratios, current_r_types, vert_counter)
             
         else:
             vert_counter = 1
-            correct_coords(current_vert, unnecessary_verts, verts, current_ratios, vert_counter)
+            correct_coords(current_vert, unnecessary_verts, verts, current_ratios, current_r_types, vert_counter)
                     
     except Exception as ex:
         print(ex)
@@ -142,8 +141,9 @@ def clean_up():
         correct_order(selected_verts[0], selected_verts, corrected_order)
         
         unnecessary_verts = []
-        
-        correct_coords(corrected_order[0], unnecessary_verts, corrected_order, get_ratios(corrected_order[0], corrected_order[1]))
+        temp_ratios, temp_r_types = get_ratios(corrected_order[0], corrected_order[1])
+
+        correct_coords(corrected_order[0], unnecessary_verts, corrected_order, temp_ratios, temp_r_types)
         
         print(unnecessary_verts)
         
