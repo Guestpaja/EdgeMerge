@@ -84,15 +84,17 @@ def get_ratios(vert1, vert2):
     return ratios, ratio_types
 
 
-def correct_coords(last_vert, unnecessary_verts, verts, last_ratios, last_r_types, vert_counter = 0):
+def correct_coords(last_vert_id, unnecessary_verts, verts, last_ratios, last_r_types, vert_counter = 0):
     
     try:
-        current_vert = verts[verts.index(last_vert) + 1]
+        last_vert = verts[last_vert_id]
+        current_vert = verts[last_vert_id + 1]
         current_ratios, current_r_types = get_ratios(last_vert, current_vert)
+        ratios_equal = True
         
         for i in range(3):
-            if abs(last_ratios[i] - current_ratios[i]) <= 0.0001:
-                ratios_equal = True
+            if abs(last_ratios[i] - current_ratios[i]) <= 0.0003: #sensitivity/tolerance
+                pass
             else:
                 ratios_equal = False
                 break
@@ -103,14 +105,14 @@ def correct_coords(last_vert, unnecessary_verts, verts, last_ratios, last_r_type
             
             if vert_counter >= 2:
                 unnecessary_verts.append(last_vert)
-                correct_coords(current_vert, unnecessary_verts, verts, current_ratios, current_r_types, vert_counter)
+                correct_coords(last_vert_id + 1, unnecessary_verts, verts, current_ratios, current_r_types, vert_counter)
             
             else:
-                correct_coords(current_vert, unnecessary_verts, verts, current_ratios, current_r_types, vert_counter)
+                correct_coords(last_vert_id + 1, unnecessary_verts, verts, current_ratios, current_r_types, vert_counter)
             
         else:
             vert_counter = 1
-            correct_coords(current_vert, unnecessary_verts, verts, current_ratios, current_r_types, vert_counter)
+            correct_coords(last_vert_id + 1, unnecessary_verts, verts, current_ratios, current_r_types, vert_counter)
                     
     except Exception as ex:
         print(ex)
@@ -137,13 +139,19 @@ def clean_up():
                 pass
 
         corrected_order = [selected_verts[0]]
-
         correct_order(selected_verts[0], selected_verts, corrected_order)
         
-        unnecessary_verts = []
-        temp_ratios, temp_r_types = get_ratios(corrected_order[0], corrected_order[1])
+        temp_adj_verts = [edge.other_vert(corrected_order[0]) for edge in corrected_order[0].link_edges]
+        
+        if corrected_order[-1] in temp_adj_verts:
+            start_vert = -2
+        else:
+            start_vert = 0
 
-        correct_coords(corrected_order[0], unnecessary_verts, corrected_order, temp_ratios, temp_r_types)
+        unnecessary_verts = []
+        temp_ratios, temp_r_types = get_ratios(corrected_order[start_vert], corrected_order[start_vert + 1])
+
+        correct_coords(start_vert, unnecessary_verts, corrected_order, temp_ratios, temp_r_types)
         
         print(unnecessary_verts)
         
