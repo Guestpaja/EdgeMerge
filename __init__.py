@@ -70,9 +70,11 @@ def correct_order(current_vert, selected_verts, corrected_order, closed_loop = T
 
 def get_ratios(vert1, vert2):
     
+    #Lenghts of each edge in a right angle triangle for the given edge (suppossing it's under an angle)
     lenghts = [abs(vert1.co[i] - vert2.co[i]) for i in range(3)]
     ratios = []
     
+    #Calculate tangents and cotangents
     for i in range(-1, 2):
         try:
             ratios.append(lenghts[i] / lenghts[i + 1])
@@ -84,7 +86,7 @@ def get_ratios(vert1, vert2):
     return ratios, ratio_types
 
 
-def correct_coords(last_vert_id, unnecessary_verts, verts, last_ratios, last_r_types, vert_counter = 0):
+def get_unnecessary_verts(last_vert_id, unnecessary_verts, verts, last_ratios, last_r_types, vert_counter = 0):
     
     try:
         last_vert = verts[last_vert_id]
@@ -92,27 +94,29 @@ def correct_coords(last_vert_id, unnecessary_verts, verts, last_ratios, last_r_t
         current_ratios, current_r_types = get_ratios(last_vert, current_vert)
         ratios_equal = True
         
+        #Check if ratios are equal (within given tolerance)
         for i in range(3):
-            if abs(last_ratios[i] - current_ratios[i]) <= 0.0003: #sensitivity/tolerance
+            if abs(last_ratios[i] - current_ratios[i]) <= 0.0007:
                 pass
             else:
                 ratios_equal = False
                 break
         
+        #If types and ratios are equal, then the edge is under the same angle(s) and the last vertex can be removed
         if ratios_equal and current_r_types == last_r_types:
             
             vert_counter += 1
             
             if vert_counter >= 2:
                 unnecessary_verts.append(last_vert)
-                correct_coords(last_vert_id + 1, unnecessary_verts, verts, current_ratios, current_r_types, vert_counter)
+                get_unnecessary_verts(last_vert_id + 1, unnecessary_verts, verts, current_ratios, current_r_types, vert_counter)
             
             else:
-                correct_coords(last_vert_id + 1, unnecessary_verts, verts, current_ratios, current_r_types, vert_counter)
+                get_unnecessary_verts(last_vert_id + 1, unnecessary_verts, verts, current_ratios, current_r_types, vert_counter)
             
         else:
             vert_counter = 1
-            correct_coords(last_vert_id + 1, unnecessary_verts, verts, current_ratios, current_r_types, vert_counter)
+            get_unnecessary_verts(last_vert_id + 1, unnecessary_verts, verts, current_ratios, current_r_types, vert_counter)
                     
     except Exception as ex:
         print(ex)
@@ -141,6 +145,7 @@ def clean_up():
         corrected_order = [selected_verts[0]]
         correct_order(selected_verts[0], selected_verts, corrected_order)
         
+        #Check for open/closed loop
         temp_adj_verts = [edge.other_vert(corrected_order[0]) for edge in corrected_order[0].link_edges]
         
         if corrected_order[-1] in temp_adj_verts:
@@ -151,7 +156,7 @@ def clean_up():
         unnecessary_verts = []
         temp_ratios, temp_r_types = get_ratios(corrected_order[start_vert], corrected_order[start_vert + 1])
 
-        correct_coords(start_vert, unnecessary_verts, corrected_order, temp_ratios, temp_r_types)
+        get_unnecessary_verts(start_vert, unnecessary_verts, corrected_order, temp_ratios, temp_r_types)
         
         print(unnecessary_verts)
         
