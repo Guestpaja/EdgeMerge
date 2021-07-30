@@ -24,7 +24,6 @@ bl_info = {
 
 import bpy
 import bmesh
-from bpy.types import RENDER_PT_color_management
 
 ###############
 # MINOR FUNCS #
@@ -55,7 +54,7 @@ def correct_order(current_vert, selected_verts, corrected_order, closed_loop = T
     for adj_vert in adj_verts:
 
         if adj_vert in selected_verts and adj_vert not in corrected_order:
-
+            
                 if closed_loop:
                     corrected_order.append(adj_vert)
                     closed_loop = correct_order(adj_vert, selected_verts, corrected_order, closed_loop)
@@ -102,7 +101,7 @@ def get_unnecessary_verts(last_vert_id, unnecessary_verts, verts, last_ratios, l
                 ratios_equal = False
                 break
         
-        #If types and ratios are equal, then the edge is under the same angle(s) and the last vertex can be removed
+        #If types and ratios are equal, then the edge is under the same angle(s) and the last vertex can be removed if it doesn't hold the shape
         if ratios_equal and current_r_types == last_r_types:
             
             vert_counter += 1
@@ -110,16 +109,58 @@ def get_unnecessary_verts(last_vert_id, unnecessary_verts, verts, last_ratios, l
             if vert_counter >= 2:
                 unnecessary_verts.append(last_vert)
                 get_unnecessary_verts(last_vert_id + 1, unnecessary_verts, verts, current_ratios, current_r_types, vert_counter)
-            
             else:
                 get_unnecessary_verts(last_vert_id + 1, unnecessary_verts, verts, current_ratios, current_r_types, vert_counter)
-            
         else:
             vert_counter = 1
             get_unnecessary_verts(last_vert_id + 1, unnecessary_verts, verts, current_ratios, current_r_types, vert_counter)
                     
     except Exception as ex:
         print(ex)
+
+
+def move_verts(unnecessary_verts, verts):
+    
+    for unnecessary_vert in unnecessary_verts:
+        
+        holding_verts = []
+        vert_index = verts.index(unnecessary_vert)
+        
+        #Get holding vert before unnecessary vert
+        for _ in range(len(verts)):
+            vert_index -= 1
+            if verts[vert_index] not in unnecessary_verts:
+                holding_verts.append(verts[vert_index])
+                break
+            else:
+                pass
+         
+        vert_index = verts.index(unnecessary_vert)
+           
+        #Get holding vert after unnecessary vert
+        for _ in range(len(verts)):
+            try:
+                vert_index += 1
+                if verts[vert_index] not in unnecessary_verts:
+                    holding_verts.append(verts[vert_index])
+                    break
+                else:
+                    pass
+            except IndexError:
+                vert_index = -1
+        
+        vert_distances = []
+        
+        #Get closest holding vert
+        for vert in holding_verts:
+            temp = 0  
+            for i in range(3):
+                temp += abs(vert.co[i] - unnecessary_vert.co[i])
+            vert_distances.append(temp)
+        
+        closest_holding_vert = holding_verts[vert_distances.index(min(vert_distances))]
+        
+        unnecessary_vert.co = closest_holding_vert.co
 
 
 #############
@@ -157,15 +198,20 @@ def clean_up():
         temp_ratios, temp_r_types = get_ratios(corrected_order[start_vert], corrected_order[start_vert + 1])
 
         get_unnecessary_verts(start_vert, unnecessary_verts, corrected_order, temp_ratios, temp_r_types)
+
+        move_verts(unnecessary_verts, corrected_order)
         
-        print(unnecessary_verts)
+        #Get new bmesh data and remove unnecessary verts
+        bm = bmesh.from_edit_mesh(current_obj.data)
+        bmesh.ops.remove_doubles(bm, verts = selected_verts, dist = 0.0001)
+        
+        #Apply changes
+        bpy.ops.object.mode_set(mode = 'OBJECT')
+        bpy.ops.object.mode_set(mode = 'EDIT')
         
         
     else:
         print("Object is not in edit mode.")
-    
-    bpy.ops.object.mode_set(mode = 'OBJECT')
-    bpy.ops.object.mode_set(mode = 'EDIT')
 
 
 #######################
