@@ -13,13 +13,13 @@
 
 bl_info = {
     "name" : "EdgeMerge",
-    "author" : "Pavel Hradil (Guestpaja)",
+    "author" : "Guestpaja",
     "description" : "A simple add-on to help with cleaning up after boolean or knife operations",
     "blender" : (2, 80, 0),
-    "version" : (0, 0, 1),
-    "location" : "",
+    "version" : (1, 0),
+    "location" : "View3D > Sidebar > Edit Tab / Edit Mode Context Menu",
     "warning" : "",
-    "category" : "Generic"
+    "category" : "Mesh"
 }
 
 import bpy
@@ -115,8 +115,8 @@ def get_unnecessary_verts(last_vert_id, unnecessary_verts, verts, last_ratios, l
             vert_counter = 1
             get_unnecessary_verts(last_vert_id + 1, unnecessary_verts, verts, current_ratios, current_r_types, vert_counter)
                     
-    except Exception as ex:
-        print(ex)
+    except IndexError:
+        pass
 
 
 def move_verts(unnecessary_verts, verts):
