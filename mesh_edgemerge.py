@@ -13,7 +13,7 @@
 
 bl_info = {
     "name" : "EdgeMerge",
-    "author" : "Guestpaja",
+    "author" : "Pavel Hradil",
     "description" : "A simple add-on to help with cleaning up after boolean or knife operations",
     "blender" : (2, 80, 0),
     "version" : (1, 0),
