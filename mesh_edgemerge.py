@@ -16,7 +16,7 @@ bl_info = {
     "author" : "Pavel Hradil",
     "description" : "A simple add-on to help with cleaning up after boolean or knife operations",
     "blender" : (2, 80, 0),
-    "version" : (1, 0),
+    "version" : (1, 1),
     "location" : "View3D > Sidebar > Edit Tab / Edit Mode Context Menu",
     "warning" : "",
     "category" : "Mesh"
@@ -85,7 +85,7 @@ def get_ratios(vert1, vert2):
     return ratios, ratio_types
 
 
-def get_unnecessary_verts(last_vert_id, unnecessary_verts, verts, last_ratios, last_r_types, vert_counter = 0):
+def get_unnecessary_verts(last_vert_id, unnecessary_verts, verts, last_ratios, last_r_types, tolerance, vert_counter = 0):
     
     try:
         last_vert = verts[last_vert_id]
@@ -95,7 +95,7 @@ def get_unnecessary_verts(last_vert_id, unnecessary_verts, verts, last_ratios, l
         
         #Check if ratios are equal (within given tolerance)
         for i in range(3):
-            if abs(last_ratios[i] - current_ratios[i]) <= 0.0007:
+            if abs(last_ratios[i] - current_ratios[i]) <= tolerance:
                 pass
             else:
                 ratios_equal = False
@@ -108,12 +108,12 @@ def get_unnecessary_verts(last_vert_id, unnecessary_verts, verts, last_ratios, l
             
             if vert_counter >= 2:
                 unnecessary_verts.append(last_vert)
-                get_unnecessary_verts(last_vert_id + 1, unnecessary_verts, verts, current_ratios, current_r_types, vert_counter)
+                get_unnecessary_verts(last_vert_id + 1, unnecessary_verts, verts, current_ratios, current_r_types, tolerance, vert_counter)
             else:
-                get_unnecessary_verts(last_vert_id + 1, unnecessary_verts, verts, current_ratios, current_r_types, vert_counter)
+                get_unnecessary_verts(last_vert_id + 1, unnecessary_verts, verts, current_ratios, current_r_types, tolerance, vert_counter)
         else:
             vert_counter = 1
-            get_unnecessary_verts(last_vert_id + 1, unnecessary_verts, verts, current_ratios, current_r_types, vert_counter)
+            get_unnecessary_verts(last_vert_id + 1, unnecessary_verts, verts, current_ratios, current_r_types, tolerance, vert_counter)
                     
     except IndexError:
         pass
@@ -167,12 +167,14 @@ def move_verts(unnecessary_verts, verts):
 # MAIN FUNC #
 #############
 
-def clean_up():
+def clean_up(tolerance_percent):
 
+    tolerance = (tolerance_percent * 0.1) ** (2)
+    
     current_obj = bpy.context.object
-
-    if current_obj.mode == 'EDIT':
-        
+    
+    if current_obj.mode == 'EDIT':  
+          
         selected_verts = []
         bm = bmesh.from_edit_mesh(current_obj.data)
 
@@ -197,7 +199,7 @@ def clean_up():
         unnecessary_verts = []
         temp_ratios, temp_r_types = get_ratios(corrected_order[start_vert], corrected_order[start_vert + 1])
 
-        get_unnecessary_verts(start_vert, unnecessary_verts, corrected_order, temp_ratios, temp_r_types)
+        get_unnecessary_verts(start_vert, unnecessary_verts, corrected_order, temp_ratios, temp_r_types, tolerance)
 
         move_verts(unnecessary_verts, corrected_order)
         
@@ -209,41 +211,55 @@ def clean_up():
         bpy.ops.object.mode_set(mode = 'OBJECT')
         bpy.ops.object.mode_set(mode = 'EDIT')
         
-        
     else:
-        print("Object is not in edit mode.")
+        pass
 
 
 #######################
 # ADD-ON INSTALLATION #
 #######################
 
-class CleanUpOperator(bpy.types.Operator):
+class MESH_OT_clean_up(bpy.types.Operator):
     
-    bl_idname = "edgemerge.edge_clean_up"
+    bl_idname = "mesh.edge_clean_up"
     bl_label = "Edge Clean Up"
+    bl_options = {'REGISTER', 'UNDO'}
+    
+    tolerance: bpy.props.FloatProperty(
+        name = "Angle tolerance (%)",
+        description = "Sensitivity of detecting angles to find holding vertices",
+        default = 1,
+        min = 0,
+        soft_min = 0,
+        precision = 2,
+        step = 1
+    )
+    
+    @classmethod
+    def poll(cls, context):
+        return context.area.type == 'VIEW_3D'
     
     def execute(self, context):
         try:
-            clean_up()
+            clean_up(self.tolerance)
             return {'FINISHED'}
         
         except Exception as ex:
-            print("Well shit")
             print(ex)
             return {'CANCELLED'}
+
 
 def draw_menu(self, context):
     layout = self.layout
     layout.separator()
-    layout.operator("edgemerge.edge_clean_up", text = "Edge Clean Up")
+    layout.operator("mesh.edge_clean_up", text = "Edge Clean Up")
 
 def register():
-    bpy.utils.register_class(CleanUpOperator)
+    bpy.utils.register_class(MESH_OT_clean_up)
     bpy.types.VIEW3D_MT_edit_mesh_context_menu.prepend(draw_menu)
 
 def unregister():
-    bpy.utils.unregister_class(CleanUpOperator)
+    bpy.utils.unregister_class(MESH_OT_clean_up)
     bpy.types.VIEW3D_MT_edit_mesh_context_menu.remove(draw_menu)
     
 if __name__ == '__main__':
