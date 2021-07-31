@@ -27,7 +27,7 @@ The add-on is installed just like any other blender add-ons from a python file. 
 
 # Limitations
 
-Unfortunately, the add-on is not just "magic" and therefore basically only works on a **single loop at a time**. Below are some examples of what it **does not** work on:
+Unfortunately, the add-on is not just "magic" and therefore only works on a **single loop at a time**. Below are some examples of what it **does not** work on:
 
 ![image](https://user-images.githubusercontent.com/84248577/127744132-2ce1f03e-9104-408f-82dc-c814295204d8.png)
 ![image](https://user-images.githubusercontent.com/84248577/127744153-b561a920-2862-4417-828c-cdd638a03ab7.png)
