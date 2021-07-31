@@ -2,6 +2,8 @@
 
 A simple blender add-on to make life easier when cleaning up after knife and/or boolean operations.
 
+https://gyazo.com/37ae4cce57753c46cf9c310a2a6086aa (usage showcase)
+
 # Usecases, basics of the algorithm
 
 When working with boolean and knife operations, no matter if your workflow is destructive or non-destructive, there is good chance you are going to be left with extra vertices. And in most cases, you are going to want to remove them - they add unnecessary data to store, waste processing power when you want to do something with the model and also often ruin shading.
@@ -27,7 +29,7 @@ The add-on is installed just like any other blender add-ons from a python file. 
 
 # Limitations
 
-Unfortunately, the add-on is not just "magic" and therefore basically only works on a **single loop at a time**. Below are some examples of what it **does not** work on:
+Unfortunately, the add-on is not just "magic" and therefore only works on a **single loop at a time**. Below are some examples of what it **does not** work on:
 
 ![image](https://user-images.githubusercontent.com/84248577/127744132-2ce1f03e-9104-408f-82dc-c814295204d8.png)
 ![image](https://user-images.githubusercontent.com/84248577/127744153-b561a920-2862-4417-828c-cdd638a03ab7.png)

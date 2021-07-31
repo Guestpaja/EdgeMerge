@@ -1,3 +1,7 @@
+# A simple add-on to make life easier when cleaning up meshes.
+#
+# Copyright (C) 2021 Pavel Hradil
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 3 of the License, or
