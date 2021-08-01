@@ -21,7 +21,7 @@ bl_info = {
     "description" : "A simple add-on to help with cleaning up after boolean or knife operations",
     "blender" : (2, 80, 0),
     "version" : (1, 1),
-    "location" : "View3D > Sidebar > Edit Tab / Edit Mode Context Menu",
+    "location" : "View3D > Edit Mode Context Menu",
     "warning" : "",
     "category" : "Mesh"
 }
