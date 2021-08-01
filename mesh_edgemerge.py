@@ -22,7 +22,7 @@ bl_info = {
     "blender" : (2, 80, 0),
     "version" : (1, 1),
     "location" : "View3D > Edit Mode Context Menu",
-    "warning" : "",
+    "doc_url" : "https://github.com/HradilP/EdgeMerge/blob/master/README.md",
     "category" : "Mesh"
 }
 
