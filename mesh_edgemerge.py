@@ -235,6 +235,7 @@ class MESH_OT_clean_up(bpy.types.Operator):
         default = 1,
         min = 0,
         soft_min = 0,
+        soft_max = 100,
         precision = 2,
         step = 10
     )
