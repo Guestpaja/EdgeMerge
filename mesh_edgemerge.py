@@ -236,7 +236,7 @@ class MESH_OT_clean_up(bpy.types.Operator):
         min = 0,
         soft_min = 0,
         precision = 2,
-        step = 1
+        step = 10
     )
     
     @classmethod
